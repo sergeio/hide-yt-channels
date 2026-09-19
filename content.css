@@ -1,0 +1,35 @@
+.hyc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid var(--yt-spec-10-percent-layer, #909090);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--yt-spec-text-secondary, #909090);
+  font-size: 13px;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+ytd-rich-item-renderer:hover .hyc-btn,
+ytd-video-renderer:hover .hyc-btn,
+ytd-compact-video-renderer:hover .hyc-btn,
+ytd-grid-video-renderer:hover .hyc-btn,
+.hyc-btn:hover,
+.hyc-btn:focus-visible {
+  opacity: 0.6;
+}
+
+.hyc-btn:hover,
+.hyc-btn:focus-visible {
+  opacity: 1;
+  color: var(--yt-spec-brand-button-background, #f00);
+  border-color: var(--yt-spec-brand-button-background, #f00);
+}
