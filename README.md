@@ -1,4 +1,4 @@
-# Hide YouTube Channels
+# Youtube: Hide Channels
 
 Firefox extension (Manifest V3) that hides unwanted YouTube channels and videos.
 Adds an unobtrusive "hide" button next to each channel name and video. Hidden

@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Hide YouTube Channels",
+  "name": "Youtube: Hide Channels",
   "version": "1.0.0",
   "description": "Hide unwanted YouTube channels and videos with one click.",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Hide YouTube Channels"
+    "default_title": "Youtube: Hide Channels"
   },
   "icons": {
     "48": "icons/icon-48.png",
