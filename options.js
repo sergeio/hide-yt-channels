@@ -1,14 +1,13 @@
 "use strict";
 
 const CHANNELS_KEY = "channels";
-const VIDEOS_KEY = "videos";
 
-function renderList(listEl, values, key) {
+function renderList(listEl, values) {
   listEl.textContent = "";
   if (!values.length) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.textContent = "Nothing hidden yet.";
+    li.textContent = "No channels hidden yet.";
     listEl.append(li);
     return;
   }
@@ -18,26 +17,22 @@ function renderList(listEl, values, key) {
     code.textContent = value;
     const btn = document.createElement("button");
     btn.textContent = "Unhide";
-    btn.addEventListener("click", () => removeValue(key, value));
+    btn.addEventListener("click", () => removeChannel(value));
     li.append(code, btn);
     listEl.append(li);
   }
 }
 
-async function removeValue(key, value) {
-  const stored = await browser.storage.local.get({ [key]: [] });
+async function removeChannel(value) {
+  const stored = await browser.storage.local.get({ [CHANNELS_KEY]: [] });
   await browser.storage.local.set({
-    [key]: stored[key].filter((v) => v !== value),
+    [CHANNELS_KEY]: stored[CHANNELS_KEY].filter((v) => v !== value),
   });
 }
 
 async function renderAll() {
-  const stored = await browser.storage.local.get({
-    [CHANNELS_KEY]: [],
-    [VIDEOS_KEY]: [],
-  });
-  renderList(document.getElementById("channel-list"), stored[CHANNELS_KEY], CHANNELS_KEY);
-  renderList(document.getElementById("video-list"), stored[VIDEOS_KEY], VIDEOS_KEY);
+  const stored = await browser.storage.local.get({ [CHANNELS_KEY]: [] });
+  renderList(document.getElementById("channel-list"), stored[CHANNELS_KEY]);
 }
 
 browser.storage.onChanged.addListener(renderAll);

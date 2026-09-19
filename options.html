@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Hide YouTube Channels — Manage Hidden</title>
+    <title>Hide YouTube Channels — Hidden Channels</title>
     <style>
       body {
         font-family: Roboto, Arial, sans-serif;
@@ -13,10 +13,6 @@
       }
       h1 {
         font-size: 1.3rem;
-      }
-      h2 {
-        font-size: 1.05rem;
-        margin-bottom: 0.4rem;
       }
       ul {
         list-style: none;
@@ -44,14 +40,20 @@
         font-size: 0.85rem;
         padding: 0.4rem 0.6rem;
       }
+      .hint {
+        color: #606060;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+      }
     </style>
   </head>
   <body>
-    <h1>Hidden channels and videos</h1>
-    <h2>Channels</h2>
+    <h1>Hidden channels</h1>
     <ul id="channel-list"></ul>
-    <h2>Videos</h2>
-    <ul id="video-list"></ul>
+    <p class="hint">
+      Unhiding a channel takes effect after reloading YouTube or navigating to
+      another page.
+    </p>
     <script src="options.js"></script>
   </body>
 </html>

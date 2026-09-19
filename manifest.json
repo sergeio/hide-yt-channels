@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "description": "Hide unwanted YouTube channels and videos with one click.",
   "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Hide YouTube Channels"
+  },
   "icons": {
     "48": "icons/icon-48.png",
     "96": "icons/icon-96.png"
