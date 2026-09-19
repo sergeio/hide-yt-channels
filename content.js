@@ -30,7 +30,6 @@ async function loadHidden() {
   hiddenVideos.clear();
   for (const v of stored[CHANNELS_KEY]) hiddenChannels.add(v);
   for (const v of stored[VIDEOS_KEY]) hiddenVideos.add(v);
-  for (const v of hiddenChannels) log("stored hidden channel:", v);
 }
 
 function persist() {
@@ -144,12 +143,10 @@ function processAll() {
     const videoMatch = videoId && hiddenVideos.has(videoId);
     if (channelMatch || videoMatch) {
       const reasons = [
-        channelMatch && "its channel is in the hidden-channels list",
-        videoMatch && "it is in the videos-to-hide list",
+        channelMatch && "channel hidden",
+        videoMatch && "video hidden",
       ].filter(Boolean);
-      log(
-        `removed frontpage video "${title}" — ${reasons.join(" and ")}`
-      );
+      log(`removed "${title}" (${reasons.join(" + ")})`);
       outer.remove();
       continue;
     }
@@ -195,11 +192,17 @@ async function handleHide(btn, kind) {
 
 function injectButtons(item, videoId, channel) {
   if (channel) {
-    const anchor =
-      item.querySelector("#channel-name a") ||
-      item.querySelector("ytd-channel-name a");
-    if (anchor && !anchor.querySelector("." + BTN_CLASS)) {
-      anchor.prepend(makeButton("channel", "Hide this channel"));
+    const anchor = [...item.querySelectorAll("a[href]")].find(
+      (a) =>
+        channelIdentifierFromHref(a.getAttribute("href")) &&
+        a.textContent.trim().length > 0
+    );
+    if (anchor) {
+      if (!anchor.querySelector("." + BTN_CLASS)) {
+        anchor.prepend(makeButton("channel", "Hide this channel"));
+      }
+    } else {
+      log("channel anchor not found:", channel);
     }
   }
   const title = getTitleAnchor(item);
