@@ -30,6 +30,7 @@ async function loadHidden() {
   hiddenVideos.clear();
   for (const v of stored[CHANNELS_KEY]) hiddenChannels.add(v);
   for (const v of stored[VIDEOS_KEY]) hiddenVideos.add(v);
+  for (const v of hiddenChannels) log("stored hidden channel:", v);
 }
 
 function persist() {
@@ -41,6 +42,8 @@ function persist() {
 
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
+  const keys = Object.keys(changes).join(", ");
+  log("storage changed:", keys);
   if (changes[CHANNELS_KEY]) {
     hiddenChannels.clear();
     for (const v of changes[CHANNELS_KEY].newValue ?? []) hiddenChannels.add(v);
@@ -51,6 +54,10 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
   scheduleProcess();
 });
+
+function log(...args) {
+  console.log("shyc: ", ...args);
+}
 
 function videoIdFromHref(href) {
   if (!href) return null;
@@ -105,10 +112,26 @@ function scheduleProcess() {
 
 let processTimer = 0;
 
+function getTitleAnchor(item) {
+  return (
+    item.querySelector("a#video-title-link") ||
+    item.querySelector("a#video-title") ||
+    item.querySelector("h3 a")
+  );
+}
+
+function getTitleText(item) {
+  const title = getTitleAnchor(item);
+  if (!title) return "";
+  const clone = title.cloneNode(true);
+  clone.querySelectorAll("." + BTN_CLASS).forEach((b) => b.remove());
+  return clone.textContent.trim();
+}
+
 function processAll() {
   if (!storageReady) return;
   for (const el of document.querySelectorAll(ITEM_SELECTOR)) {
-    if (el.dataset[PROCESSED_FLAG]) continue;
+    if (el.dataset[PROCESSED_FLAG] && el.querySelector("." + BTN_CLASS)) continue;
     const outer = outermostItem(el);
     if (outer !== el) continue;
     if (outer.closest(AD_SELECTOR)) {
@@ -116,10 +139,17 @@ function processAll() {
       continue;
     }
     const { videoId, channel } = extractIdentifiers(outer);
-    if (
-      (channel && hiddenChannels.has(channel)) ||
-      (videoId && hiddenVideos.has(videoId))
-    ) {
+    const title = getTitleText(outer) || "(no title)";
+    const channelMatch = channel && hiddenChannels.has(channel);
+    const videoMatch = videoId && hiddenVideos.has(videoId);
+    if (channelMatch || videoMatch) {
+      const reasons = [
+        channelMatch && "its channel is in the hidden-channels list",
+        videoMatch && "it is in the videos-to-hide list",
+      ].filter(Boolean);
+      log(
+        `removed frontpage video "${title}" — ${reasons.join(" and ")}`
+      );
       outer.remove();
       continue;
     }
@@ -152,6 +182,10 @@ async function handleHide(btn, kind) {
   const item = outermostItem(btn.closest(ITEM_SELECTOR));
   if (!item) return;
   const { videoId, channel } = extractIdentifiers(item);
+  log(`hide clicked (${kind}):`, {
+    channel: channel ?? "(unknown)",
+    video: getTitleText(item) || "(no title)",
+  });
   if (kind === "channel" && channel) hiddenChannels.add(channel);
   if (kind === "video" && videoId) hiddenVideos.add(videoId);
   item.remove();
@@ -164,16 +198,13 @@ function injectButtons(item, videoId, channel) {
     const anchor =
       item.querySelector("#channel-name a") ||
       item.querySelector("ytd-channel-name a");
-    if (anchor && !(anchor.nextElementSibling && anchor.nextElementSibling.classList.contains(BTN_CLASS))) {
-      anchor.insertAdjacentElement("afterend", makeButton("channel", "Hide this channel"));
+    if (anchor && !anchor.querySelector("." + BTN_CLASS)) {
+      anchor.prepend(makeButton("channel", "Hide this channel"));
     }
   }
-  const title =
-    item.querySelector("a#video-title-link") ||
-    item.querySelector("a#video-title") ||
-    item.querySelector("h3 a");
-  if (title && !(title.nextElementSibling && title.nextElementSibling.classList.contains(BTN_CLASS))) {
-    title.insertAdjacentElement("afterend", makeButton("video", "Hide this video"));
+  const title = getTitleAnchor(item);
+  if (title && !title.querySelector("." + BTN_CLASS)) {
+    title.prepend(makeButton("video", "Hide this video"));
   }
 }
 
