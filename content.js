@@ -141,12 +141,12 @@ function processAll() {
     const title = getTitleText(outer) || "(no title)";
     const channelMatch = channel && hiddenChannels.has(channel);
     const videoMatch = videoId && hiddenVideos.has(videoId);
-    if (channelMatch || videoMatch) {
-      const reasons = [
-        channelMatch && "channel hidden",
-        videoMatch && "video hidden",
-      ].filter(Boolean);
-      log(`removed "${title}" (${reasons.join(" + ")})`);
+    if (channelMatch) {
+      log(`removed "${title}" (channel hidden - ${channel})`);
+      outer.remove();
+      continue;
+    } else if (videoMatch) {
+      log(`removed "${title}" (video hidden)`);
       outer.remove();
       continue;
     }
