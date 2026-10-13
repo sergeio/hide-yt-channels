@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Youtube: Hide Channels — Hidden Channels</title>
+    <title>Youtube: Hide Channels — Hidden Channels and Words</title>
     <style>
       body {
         font-family: Roboto, Arial, sans-serif;
@@ -45,6 +45,16 @@
         font-size: 0.8rem;
         margin-top: 0.5rem;
       }
+      .add-row {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .add-row input {
+        flex: 1;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.9rem;
+      }
     </style>
   </head>
   <body>
@@ -54,6 +64,15 @@
       Unhiding a channel takes effect after reloading YouTube or navigating to
       another page.
     </p>
+    <h1>Banned words</h1>
+    <p class="hint" style="margin-top: 0">
+      Videos whose title contains any of these words are hidden.
+    </p>
+    <div class="add-row">
+      <input id="word-input" type="text" placeholder="Add a word…" />
+      <button id="word-add">Add</button>
+    </div>
+    <ul id="word-list"></ul>
     <script src="options.js"></script>
   </body>
 </html>

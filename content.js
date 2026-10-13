@@ -2,6 +2,7 @@
 
 const CHANNELS_KEY = "channels";
 const VIDEOS_KEY = "videos";
+const WORDS_KEY = "words";
 const PROCESSED_FLAG = "hycProcessed";
 const BTN_CLASS = "hyc-btn";
 
@@ -19,17 +20,21 @@ const VIDEO_ID_RE = /(?:[?&]v=|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/;
 
 const hiddenChannels = new Set();
 const hiddenVideos = new Set();
+const hiddenWords = new Set();
 let storageReady = false;
 
 async function loadHidden() {
   const stored = await browser.storage.local.get({
     [CHANNELS_KEY]: [],
     [VIDEOS_KEY]: [],
+    [WORDS_KEY]: [],
   });
   hiddenChannels.clear();
   hiddenVideos.clear();
+  hiddenWords.clear();
   for (const v of stored[CHANNELS_KEY]) hiddenChannels.add(v);
   for (const v of stored[VIDEOS_KEY]) hiddenVideos.add(v);
+  for (const v of stored[WORDS_KEY]) hiddenWords.add(v);
 }
 
 function persist() {
@@ -50,6 +55,10 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (changes[VIDEOS_KEY]) {
     hiddenVideos.clear();
     for (const v of changes[VIDEOS_KEY].newValue ?? []) hiddenVideos.add(v);
+  }
+  if (changes[WORDS_KEY]) {
+    hiddenWords.clear();
+    for (const v of changes[WORDS_KEY].newValue ?? []) hiddenWords.add(v);
   }
   scheduleProcess();
 });
@@ -127,6 +136,14 @@ function getTitleText(item) {
   return clone.textContent.trim();
 }
 
+function matchesBannedWords(title) {
+  const lower = title.toLowerCase();
+  for (const word of hiddenWords) {
+    if (word && lower.includes(word.toLowerCase())) return word;
+  }
+  return null;
+}
+
 function processAll() {
   if (!storageReady) return;
   for (const el of document.querySelectorAll(ITEM_SELECTOR)) {
@@ -139,9 +156,14 @@ function processAll() {
     }
     const { videoId, channel } = extractIdentifiers(outer);
     const title = getTitleText(outer) || "(no title)";
+    const wordMatch = title !== "(no title)" ? matchesBannedWords(title) : null;
     const channelMatch = channel && hiddenChannels.has(channel);
     const videoMatch = videoId && hiddenVideos.has(videoId);
-    if (channelMatch) {
+    if (wordMatch) {
+      log(`removed "${title}" (banned word: ${wordMatch})`);
+      outer.remove();
+      continue;
+    } else if (channelMatch) {
       log(`removed "${title}" (channel hidden - ${channel})`);
       outer.remove();
       continue;

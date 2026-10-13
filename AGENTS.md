@@ -20,6 +20,8 @@ channel name and video.
   - Key "channels": array of channel identifiers (channel id `UC...` from
     href when available, else channel name).
   - Key "videos": array of video ids (from `watch?v=` / Shorts links).
+  - Key "words": array of banned words (lowercase); videos whose title
+    contains any of them as a case-insensitive substring are hidden.
 
 ## Workflow
 - Dev: `npx web-ext run` (loads extension in a clean Firefox profile).
