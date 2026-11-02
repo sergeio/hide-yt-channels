@@ -11,6 +11,7 @@ const ITEM_SELECTOR = [
   "ytd-video-renderer",
   "ytd-compact-video-renderer",
   "ytd-grid-video-renderer",
+  "yt-lockup-view-model",
 ].join(",");
 
 const AD_SELECTOR =
@@ -95,6 +96,15 @@ function extractIdentifiers(item) {
   }
   if (!channel) {
     const nameEl = item.querySelector("ytd-channel-name");
+    const text = nameEl ? nameEl.textContent.trim() : "";
+    if (text) channel = text;
+  }
+  if (!channel) {
+    // New yt-lockup-view-model markup: channel name is a plain span in the
+    // first metadata row (not a link, no ytd-channel-name wrapper).
+    const nameEl = item.querySelector(
+      ".ytContentMetadataViewModelMetadataRow .ytContentMetadataViewModelMetadataText"
+    );
     const text = nameEl ? nameEl.textContent.trim() : "";
     if (text) channel = text;
   }
@@ -224,7 +234,16 @@ function injectButtons(item, videoId, channel) {
         anchor.prepend(makeButton("channel", "Hide this channel"));
       }
     } else {
-      log("channel anchor not found:", channel);
+      // New yt-lockup-view-model markup: channel name is a plain span, so
+      // attach the button there instead of inside a link.
+      const nameEl = item.querySelector(
+        ".ytContentMetadataViewModelMetadataRow .ytContentMetadataViewModelMetadataText"
+      );
+      if (nameEl && !nameEl.querySelector("." + BTN_CLASS)) {
+        nameEl.prepend(makeButton("channel", "Hide this channel"));
+      } else {
+        log("channel anchor not found:", channel);
+      }
     }
   }
   const title = getTitleAnchor(item);
