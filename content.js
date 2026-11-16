@@ -74,6 +74,9 @@ function videoIdFromHref(href) {
   return m ? m[1] : null;
 }
 
+// Extracts the href-based channel id when a channel link exists. Also used
+// by injectButtons to locate the channel link for ✕ placement. Sidebar
+// lockups have no such link; there we rely on the display name instead.
 function channelIdentifierFromHref(href) {
   if (!href) return null;
   if (href.startsWith("/channel/")) {
@@ -85,6 +88,15 @@ function channelIdentifierFromHref(href) {
   return null;
 }
 
+// Stored names must be clean: clone the element and strip our injected
+// buttons before reading text, otherwise the stored name starts with the
+// button glyph.
+function textWithoutButtons(el) {
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll("." + BTN_CLASS).forEach((b) => b.remove());
+  return clone.textContent.trim();
+}
+
 function extractIdentifiers(item) {
   let videoId = null;
   let channel = null;
@@ -94,21 +106,25 @@ function extractIdentifiers(item) {
     if (!channel) channel = channelIdentifierFromHref(href);
     if (videoId && channel) break;
   }
-  if (!channel) {
-    const nameEl = item.querySelector("ytd-channel-name");
-    const text = nameEl ? nameEl.textContent.trim() : "";
-    if (text) channel = text;
+  // Also capture the visible display name: watch-page sidebar lockups
+  // (yt-lockup-view-model) have no channel link, so filtering there can only
+  // work by name. Hiding a channel stores both identifier forms.
+  let channelName = null;
+  const nameEl = item.querySelector("ytd-channel-name");
+  if (nameEl) {
+    const text = textWithoutButtons(nameEl);
+    if (text) channelName = text;
   }
-  if (!channel) {
+  if (!channelName) {
     // New yt-lockup-view-model markup: channel name is a plain span in the
     // first metadata row (not a link, no ytd-channel-name wrapper).
-    const nameEl = item.querySelector(
+    const span = item.querySelector(
       ".ytContentMetadataViewModelMetadataRow .ytContentMetadataViewModelMetadataText"
     );
-    const text = nameEl ? nameEl.textContent.trim() : "";
-    if (text) channel = text;
+    const text = span ? textWithoutButtons(span) : "";
+    if (text) channelName = text;
   }
-  return { videoId, channel };
+  return { videoId, channel, channelName };
 }
 
 function outermostItem(el) {
@@ -140,10 +156,7 @@ function getTitleAnchor(item) {
 
 function getTitleText(item) {
   const title = getTitleAnchor(item);
-  if (!title) return "";
-  const clone = title.cloneNode(true);
-  clone.querySelectorAll("." + BTN_CLASS).forEach((b) => b.remove());
-  return clone.textContent.trim();
+  return title ? textWithoutButtons(title) : "";
 }
 
 function matchesBannedWords(title) {
@@ -164,17 +177,19 @@ function processAll() {
       outer.dataset[PROCESSED_FLAG] = "1";
       continue;
     }
-    const { videoId, channel } = extractIdentifiers(outer);
+    const { videoId, channel, channelName } = extractIdentifiers(outer);
     const title = getTitleText(outer) || "(no title)";
     const wordMatch = title !== "(no title)" ? matchesBannedWords(title) : null;
-    const channelMatch = channel && hiddenChannels.has(channel);
+    const channelMatch =
+      (channel && hiddenChannels.has(channel)) ||
+      (channelName && hiddenChannels.has(channelName));
     const videoMatch = videoId && hiddenVideos.has(videoId);
     if (wordMatch) {
       log(`removed "${title}" (banned word: ${wordMatch})`);
       outer.remove();
       continue;
     } else if (channelMatch) {
-      log(`removed "${title}" (channel hidden - ${channel})`);
+      log(`removed "${title}" (channel hidden - ${channel || channelName})`);
       outer.remove();
       continue;
     } else if (videoMatch) {
@@ -183,7 +198,7 @@ function processAll() {
       continue;
     }
     if (videoId) {
-      injectButtons(outer, videoId, channel);
+      injectButtons(outer, videoId, channel, channelName);
       outer.dataset[PROCESSED_FLAG] = "1";
     }
   }
@@ -210,20 +225,26 @@ function makeButton(kind, title) {
 async function handleHide(btn, kind) {
   const item = outermostItem(btn.closest(ITEM_SELECTOR));
   if (!item) return;
-  const { videoId, channel } = extractIdentifiers(item);
+  const { videoId, channel, channelName } = extractIdentifiers(item);
   log(`hide clicked (${kind}):`, {
-    channel: channel ?? "(unknown)",
+    channel: channel || channelName || "(unknown)",
     video: getTitleText(item) || "(no title)",
   });
-  if (kind === "channel" && channel) hiddenChannels.add(channel);
+  if (kind === "channel") {
+    // Store both forms so the channel filters on every page type: href ids
+    // match where a channel link exists, names match sidebar lockups that
+    // have none.
+    if (channel) hiddenChannels.add(channel);
+    if (channelName) hiddenChannels.add(channelName);
+  }
   if (kind === "video" && videoId) hiddenVideos.add(videoId);
   item.remove();
   await persist();
   processAll();
 }
 
-function injectButtons(item, videoId, channel) {
-  if (channel) {
+function injectButtons(item, videoId, channel, channelName) {
+  if (channel || channelName) {
     const anchor = [...item.querySelectorAll("a[href]")].find(
       (a) =>
         channelIdentifierFromHref(a.getAttribute("href")) &&
@@ -242,7 +263,7 @@ function injectButtons(item, videoId, channel) {
       if (nameEl && !nameEl.querySelector("." + BTN_CLASS)) {
         nameEl.prepend(makeButton("channel", "Hide this channel"));
       } else {
-        log("channel anchor not found:", channel);
+        log("channel anchor not found:", channel || channelName);
       }
     }
   }

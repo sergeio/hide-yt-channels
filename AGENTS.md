@@ -17,8 +17,10 @@ channel name and video.
 - Hidden videos: fully remove the element from the DOM (not collapse/dim).
 - Storage: browser.storage.local, NOT localStorage (isolated from YouTube's
   origin data, survives "clear site data", shared across extension contexts).
-  - Key "channels": array of channel identifiers (channel id `UC...` from
-    href when available, else channel name).
+  - Key "channels": array of channel identifiers — href-based ids (`UC...`,
+    `@handle`) when a channel link exists, and/or the display name. Items are
+    matched by either form, and hiding a channel stores both, so watch-page
+    sidebar lockups (which have no channel link) filter by name too.
   - Key "videos": array of video ids (from `watch?v=` / Shorts links).
   - Key "words": array of banned words (lowercase); videos whose title
     contains any of them as a case-insensitive substring are hidden.
